@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:title="Edit" android:id="@+id/edit" android:icon="@drawable/pencil_icon" app:showAsAction="always"/>
+    <item android:title="Add Comment" android:id="@+id/add_comment" />
+
+
+</menu>
