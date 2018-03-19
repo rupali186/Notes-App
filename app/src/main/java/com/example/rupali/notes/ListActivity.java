@@ -7,6 +7,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,22 +19,63 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 
-public class ListActivity extends AppCompatActivity implements AdapterView.OnItemClickListener,AdapterView.OnItemLongClickListener{
-    ListView listView;
+public class ListActivity extends AppCompatActivity {
+    //ListView listView;
+    RecyclerView recyclerView;
     ArrayList<Note> noteArrayList;
-    NoteAdapter adapter;
+    //NoteAdapter adapter;
+    RecyclerViewAdapter adapter;
     NotesOpenHelper openHelper;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
-        listView=findViewById(R.id.listView);
+        recyclerView=findViewById(R.id.recyclerView);
         openHelper=NotesOpenHelper.getOpenHelper(this);
         noteArrayList=fetchNotesFromDb();
-        adapter=new NoteAdapter(this,noteArrayList);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(this);
-        listView.setOnItemLongClickListener(this);
+        adapter=new RecyclerViewAdapter(this, noteArrayList, new RecyclerViewAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                Intent intent=new Intent(ListActivity.this,DetailActivity.class);
+                Bundle bundle=new Bundle();
+                bundle.putInt(Contract.Notes.ID,noteArrayList.get(position).getId());
+                intent.putExtras(bundle);
+                startActivityForResult(intent,Constants.DETAIL_ACTIVITY_REQUEST_CODE);
+            }
+        }, new RecyclerViewAdapter.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(final int position) {
+                AlertDialog.Builder builder=new AlertDialog.Builder(ListActivity.this);
+                builder.setMessage("Do you really want to delete?");
+                builder.setTitle("Confirm Delete");
+                builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+                builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        int id=noteArrayList.get(position).getId();
+                        noteArrayList.remove(position);
+                        adapter.notifyDataSetChanged();
+                        SQLiteDatabase database=openHelper.getWritableDatabase();
+                        String []selectionArgs={id+""};
+                        id=database.delete(Contract.Notes.TABLE_NAME,Contract.Notes.ID+"=?",selectionArgs);
+                        dialogInterface.dismiss();
+                    }
+                });
+                builder.show();
+                return true;
+            }
+        });
+//        adapter=new NoteAdapter(this,noteArrayList);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.addItemDecoration(new DividerItemDecoration(this,DividerItemDecoration.VERTICAL));
+
     }
 
     private ArrayList<Note> fetchNotesFromDb() {
@@ -67,7 +112,7 @@ public class ListActivity extends AppCompatActivity implements AdapterView.OnIte
         if(requestCode==Constants.ADD_ACTIVITY_REQUEST_CODE&&resultCode==Constants.SAVE_RESULT_CODE) {
             Bundle bundle = data.getExtras();
             if (bundle != null) {
-              fetchDataFromBundle(bundle);
+                fetchDataFromBundle(bundle);
             }
         }
         else if(requestCode==Constants.DETAIL_ACTIVITY_REQUEST_CODE&&resultCode==Constants.DETAIL_ACTIVITY_RESULT_CODE){
@@ -122,39 +167,39 @@ public class ListActivity extends AppCompatActivity implements AdapterView.OnIte
 
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Intent intent=new Intent(this,DetailActivity.class);
-        Bundle bundle=new Bundle();
-        bundle.putInt(Contract.Notes.ID,noteArrayList.get(position).getId());
-        intent.putExtras(bundle);
-        startActivityForResult(intent,Constants.DETAIL_ACTIVITY_REQUEST_CODE);
-    }
+//    @Override
+//    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//        Intent intent=new Intent(this,DetailActivity.class);
+//        Bundle bundle=new Bundle();
+//        bundle.putInt(Contract.Notes.ID,noteArrayList.get(position).getId());
+//        intent.putExtras(bundle);
+//        startActivityForResult(intent,Constants.DETAIL_ACTIVITY_REQUEST_CODE);
+//    }
 
-    @Override
-    public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
-        AlertDialog.Builder builder=new AlertDialog.Builder(this);
-        builder.setMessage("Do you really want to delete?");
-        builder.setTitle("Confirm Delete");
-        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                dialogInterface.dismiss();
-            }
-        });
-        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                int id=noteArrayList.get(pos).getId();
-                noteArrayList.remove(pos);
-                adapter.notifyDataSetChanged();
-                SQLiteDatabase database=openHelper.getWritableDatabase();
-                String []selectionArgs={id+""};
-                id=database.delete(Contract.Notes.TABLE_NAME,Contract.Notes.ID+"=?",selectionArgs);
-                dialogInterface.dismiss();
-            }
-        });
-        builder.show();
-        return true;
-    }
+//    @Override
+//    public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
+//        AlertDialog.Builder builder=new AlertDialog.Builder(this);
+//        builder.setMessage("Do you really want to delete?");
+//        builder.setTitle("Confirm Delete");
+//        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialogInterface, int i) {
+//                dialogInterface.dismiss();
+//            }
+//        });
+//        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialogInterface, int i) {
+//                int id=noteArrayList.get(pos).getId();
+//                noteArrayList.remove(pos);
+//                adapter.notifyDataSetChanged();
+//                SQLiteDatabase database=openHelper.getWritableDatabase();
+//                String []selectionArgs={id+""};
+//                id=database.delete(Contract.Notes.TABLE_NAME,Contract.Notes.ID+"=?",selectionArgs);
+//                dialogInterface.dismiss();
+//            }
+//        });
+//        builder.show();
+//        return true;
+//    }
 }
